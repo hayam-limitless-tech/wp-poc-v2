@@ -11,8 +11,8 @@ if (!PORT) {
 
 app.get("/", (req, res) => res.send("OK"));
 
-// Bind to 0.0.0.0 so Railway (and any proxy) can reach the app from outside the container
-const server = app.listen(Number(PORT), "0.0.0.0", () => {
+// Bind to :: (IPv4 + IPv6) — required for Railway's proxy/health checks
+const server = app.listen(Number(PORT), "::", () => {
   console.log("Listening on port", PORT);
 });
 
