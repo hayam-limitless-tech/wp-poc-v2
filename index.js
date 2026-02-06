@@ -7,26 +7,25 @@ app.use(express.json());
 
 const FB_TOKEN = process.env.FB_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+const PORT = process.env.PORT || 3000;
+
+if (!FB_TOKEN || !PHONE_NUMBER_ID) {
+  console.error("Missing env vars");
+  process.exit(1);
+}
 
 app.post("/send-message", async (req, res) => {
   try {
     const { to, ...rest } = req.body;
 
-    if (!to) {
-      return res.status(400).json({ error: "Missing phone number" });
+    const phone = parsePhoneNumberFromString(to);
+    if (!phone || !phone.isValid()) {
+      return res.status(400).json({ error: "Invalid phone number" });
     }
-
-    const phoneNumber = parsePhoneNumberFromString(to);
-
-    if (!phoneNumber || !phoneNumber.isValid()) {
-      return res.status(400).json({ error: "Invalid phone number format" });
-    }
-
-    const normalizedNumber = phoneNumber.number; // E.164
 
     const payload = {
       messaging_product: "whatsapp",
-      to: normalizedNumber,
+      to: phone.number,
       ...rest,
     };
 
@@ -43,11 +42,10 @@ app.post("/send-message", async (req, res) => {
 
     res.json(response.data);
   } catch (err) {
-    res.status(500).json({
-      error: "WhatsApp API request failed",
-      details: err.response?.data,
-    });
+    res.status(500).json(err.response?.data || err.message);
   }
 });
 
-app.listen(process.env.PORT || 3000);
+app.listen(PORT, () => {
+  console.log(`Server listening on ${PORT}`);
+});
